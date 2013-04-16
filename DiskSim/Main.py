@@ -11,4 +11,6 @@ class DiskRequests(Process):
     """ Generator PEM that simulates disk requests """
     def requests(self, numRequests, rate):
         for i in range(numRequests):
+            print(i)
+            
             
