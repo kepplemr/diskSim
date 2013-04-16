@@ -13,4 +13,6 @@ class DiskRequests(Process):
         for i in range(numRequests):
             print(i)
             
+    def foo(self):
+        print("foo")
             
