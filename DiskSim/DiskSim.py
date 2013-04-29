@@ -36,10 +36,7 @@ class ReadRequest(Process):
     def request(self):
         arrive = self.sim.now()
         self.trackNum = int(random.uniform(0, 100))
-        print("Assign track num: %d"%self.trackNum)
         readLength = expovariate(1.0/MEAN_READ_LENGTH) 
-        print("%s: Arrived @ %8.3f"%(self.name, self.sim.now()))
-        # Pushes shit onto queue
         yield request,self,self.sim.head,self.trackNum
         wait = self.sim.now()-arrive
         readTime = abs(self.sim.head.pos - self.trackNum) * .4
@@ -66,7 +63,7 @@ class DiskSim(Simulation):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Hard Disk Simulation')
-    parser.add_argument('-a', choices=['FCFS','SSF','SCAN'],default='SSF', 
+    parser.add_argument('-a', choices=['FCFS','SSF','SCAN'],default='SCAN', 
     help="""the algorithm used by the read head when selecting the next 
     sector. Choices are FCFS, SSF, or SCAN. Default is FCFS""")
     parser.add_argument('-i', default=5, type=int, help="""average inter-arrival

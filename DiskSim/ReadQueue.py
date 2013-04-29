@@ -6,46 +6,60 @@ Created on Apr 28, 2013
 from SimPy.Lib import *
 import DiskSim as SIM
 
-class ReadQ(FIFO):
-    # This method ran only at the beginning of simulation; all Processes will be
-    #  on the Queue before we start executing and removing any. 
-    # _priority is automatically set to the 4th argument when there is one, don't
-    # really need to use it per se. 
+MAX_PRIORITY = 200
+
+def enum(**enums):
+    return type('Enum', (), enums)
+
+Dir = enum(FORWARD=1, BACK=2)
+
+class ReadQ(Queue):
+    def __init__(self, res, moni):
+        """Constructor for ReadQ data structure"""
+        self.direction = Dir.FORWARD
+        FIFO.__init__(self, res, moni)
+
     def enter(self, obj):
-        if len(self):
-            # Higher numerical priority = higher priority
-            # In Python, a negative index accesses elements from the end of the
-            #   list counting backwards. The last element of a non-empty list is
-            #   foo[-1].
-            # So, this is saying if the last element has higher priority than the
-            #   element we're adding, append the element to the end and be done.
-            if self[-1].trackNum >= obj.trackNum:
-                self.append(obj)
-            else:
-                iterator = 0
-                while self[iterator].trackNum >= obj.trackNum:
-                    iterator += 1
-                self.insert(iterator, obj)
-        else:
-            self.append(obj)
+        """Add a read request to the waiting queue"""
+        self.append(obj)
         if self.monit:
             self.moni.observe(len(self),t = self.moni.sim.now())
-            
+    
+    def scanDistance(self, read):
+        """Prioritizes reads according to the SCAN/ELEVATOR algorithm"""
+        if (self.direction == Dir.FORWARD):
+            if (self.resource.pos > read.trackNum):
+                return (MAX_PRIORITY-read.trackNum)
+            return read.trackNum
+        elif (self.direction == Dir.BACK):
+            if (self.resource.pos < read.trackNum):
+                return (MAX_PRIORITY+read.trackNum)
+            return -read.trackNum
+    
     def leave(self):
-        #print("Read Head @: %d"%self.resource.pos)
-        #print("What's in the list:")
-        #for item in self:
-        #    print("TrackNum: %d"%item.trackNum)
+        """Determines which read to service next according to algorithm, and 
+        returns it. Changes the direction of reads when appropriate for SCAN
+        algorithm"""
+        print("Read Head @: %d"%self.resource.pos)
+        print("What's in the list:")
+        for item in self:
+            print("TrackNum: %d"%item.trackNum)
         if (self.resource.algorithm == 'SSF'):
             self.sort(key=lambda read: abs(read.trackNum-self.resource.pos))
         elif (self.resource.algorithm == 'SCAN'):
-            self.sort()
-        #print("What's in the list now:")
-        #for item in self:
-        #    print("TrackNum: %d"%item.trackNum)
+            if (self.direction == Dir.FORWARD):
+                self.sort(key=self.scanDistance)
+                if (self.resource.pos > self[0].trackNum):
+                    self.direction = Dir.BACK
+            elif (self.direction == Dir.BACK):
+                self.sort(key=self.scanDistance)
+                if (self.resource.pos < self[0].trackNum):
+                    self.direction = Dir.FORWARD
+        print("What's in the list now:")
+        for item in self:
+            print("TrackNum: %d"%item.trackNum)
         input()
         ele = self.pop(0)
         if self.monit:
             self.moni.observe(len(self),t = self.moni.sim.now())
         return ele
-    
