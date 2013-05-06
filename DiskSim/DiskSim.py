@@ -32,6 +32,12 @@ class Controller(Process):
             req = ReadRequest(name="Request%03d" % (i), sim=self.sim)
             self.sim.activate(req, req.request())
             nextReq = random.uniform(0, mean*2)
+            if (i == 100):
+                self.sim.byteMon.reset()
+                self.sim.seekMon.reset()
+                self.sim.accessMon.reset()
+                self.sim.rotMon.reset()
+                self.sim.diskMov.reset()
             yield hold, self, nextReq
             
 class ReadRequest(Process):
@@ -183,6 +189,7 @@ def runTests():
     ax.set_xticklabels(('150/10000','150/7200','5/10000','5/7200'))
     ax.legend((rects[0][0],rects[1][0],rects[2][0]), ('FCFS', 'SSF','Elevator/SCAN'))
     plt.show()
+    sys.exit()
 
 if __name__ == "__main__":
     DiskSim()
